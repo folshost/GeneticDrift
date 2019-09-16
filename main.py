@@ -7,14 +7,15 @@ class Population:
     def __init__(self, n_, k_):
         self.n = n_
         self.k = k_
-        first_gen = np.zeros(self.n)
-        counter = 0
-        first_gen[0] = counter
+        first_gen = np.ones(self.n)
+
         self.last_live_gen = {}
         for i in range(self.k):
             self.last_live_gen[i] = 0
-        for i in range(1, first_gen.shape[0]):
-            if (self.n - i) % (self.n / self.k) == 0 and counter != k:
+        counter = -1
+        for i in range(first_gen.shape[0]):
+            if (i % int(self.n / self.k)) == 0 and counter+1 != k:
+                #print("Incrementing: ", counter, i)
                 counter += 1
             first_gen[i] = counter
         self.num_unique = self.k
@@ -26,6 +27,8 @@ class Population:
     def run(self, display_stats=False):
         while self.num_unique > 1:
             self.generation(display_stats)
+        if display_stats:
+            self.display_generation_dists()
 
 
     def get_count_arr(self):
@@ -34,7 +37,7 @@ class Population:
         result = np.zeros(self.k, dtype=int)
         #print(uni, counts, result)
         for i, j in zip(uni.astype(int), counts.astype(int)):
-            #print(i)
+            #print(i, j)
             result[i] = j
         return result
 
@@ -53,9 +56,12 @@ class Population:
         self.current_gen = children
         self.generations[self.gen_idx] = self.get_count_arr()
         if self.gen_idx < 5 and display_stats:
-            self.display_stats()
+            self.display_generation_dist()
 
-    def display_stats(self):
+    def display_generation_dist(self):
+        global figure_
+        plt.figure(figure_)
+        figure_ += 1
         print("Mode", mode(self.current_gen))
         n_bins = self.n
         # Generate a normal distribution, center at x=0 and y=5
@@ -65,19 +71,35 @@ class Population:
         # We can set the number of bins with the `bins` kwarg
         axs.hist(x, bins=n_bins)
         plt.title("Evenly Distributed Start: {0}\nChild Distribution Generation {1}".format(self.k, self.gen_idx))
-        plt.show()
+        #plt.show()
+
+    def display_generation_dists(self):
+        global figure_
+        plt.figure(figure_)
+        figure_ += 1
+        lines = self.generations[:self.gen_idx].T
+        print("First start: ", lines[:, 0])
+        names = [str(x) for x in np.arange(self.k)]
+        x = np.arange(self.gen_idx)
+        for i in range(self.k):
+            plt.plot(x, lines[i], '-', label=names[i])
+        plt.title("Evenly Distributed Start: {0}".format(self.k))
+        #plt.show()
 
 
-sample_size = 2
+
+sample_size = 25
 n = 1000
+figure_ = 0
 
 k_times = []
 for k in range(2, 5):
     times = np.zeros(sample_size, dtype=int)
     for j in range(sample_size):
         pop = Population(n, k)
-        pop.run() #display_stats=(j == 0))
-        print("Children: ", pop.generations.T)
-        print("It took {0} generations. Dominant {1}.".format(pop.gen_idx+1, pop.current_gen[0]))
+        pop.run()
+        print(k, pop.gen_idx+1)
         times[j] = pop.gen_idx
-    k_times += times.mean()
+    k_times += [times.mean()]
+print(k_times)
+plt.show()
