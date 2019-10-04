@@ -1,6 +1,5 @@
-import matplotlib.pyplot as plt
 import numpy as np
-from scipy.stats import mode
+
 
 
 class Population:
@@ -42,7 +41,7 @@ class Population:
         return result
 
 
-    def generation(self, display_stats=False):
+    def generation(self, display_stats=False, display_first_gens=False):
         child_is_of = np.random.randint(0, self.n, size=self.n)
         children = np.zeros(self.n).astype(int)
         self.gen_idx += 1
@@ -55,10 +54,12 @@ class Population:
             self.last_live_gen[children[i]] = self.gen_idx
         self.current_gen = children
         self.generations[self.gen_idx] = self.get_count_arr()
-        if self.gen_idx < 5 and display_stats:
+        if self.gen_idx < 5 and display_first_gens:
             self.display_generation_dist()
 
     def display_generation_dist(self):
+        from scipy.stats import mode
+        import matplotlib.pyplot as plt
         global figure_
         plt.figure(figure_)
         figure_ += 1
@@ -74,6 +75,7 @@ class Population:
         #plt.show()
 
     def display_generation_dists(self):
+        import matplotlib.pyplot as plt
         global figure_
         plt.figure(figure_)
         figure_ += 1
@@ -88,18 +90,21 @@ class Population:
 
 
 
-sample_size = 25
+sample_size = 6
 n = 1000
 figure_ = 0
+display_stats = True
 
 k_times = []
 for k in range(2, 5):
     times = np.zeros(sample_size, dtype=int)
     for j in range(sample_size):
         pop = Population(n, k)
-        pop.run()
+        pop.run(display_stats=display_stats)
         print(k, pop.gen_idx+1)
         times[j] = pop.gen_idx
-    k_times += [times.mean()]
+    k_times += [(k, times.mean())]
 print(k_times)
-plt.show()
+if display_stats:
+    import matplotlib.pyplot as plt
+    plt.show()
